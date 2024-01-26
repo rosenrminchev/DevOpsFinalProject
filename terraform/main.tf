@@ -4,7 +4,7 @@ resource "aws_iam_instance_profile" "ec2-profile" {
 }
 
 resource "aws_instance" "servernode" {
-  ami                    = "ami-052efd3df9dad4825"
+  ami                    = "ami-0905a3c97561e0b69"
   instance_type          = "t2.micro"
   key_name               = aws_key_pair.deployer.key_name
   vpc_security_group_ids = [aws_security_group.maingroup.id]
