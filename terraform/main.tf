@@ -72,7 +72,7 @@ data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnets" "default" {
+data "aws_subnet" "default" {
   vpc_id = data.aws_vpc.default.id
 }
 
@@ -104,7 +104,7 @@ resource "aws_eks_cluster" "cluster" {
   role_arn = aws_iam_role.eks_cluster_role.arn
 
   vpc_config {
-    subnet_ids = tolist(data.aws_subnet_ids.default.ids)
+    subnet_ids = data.aws_subnet.default.ids
   }
 }
 
@@ -137,7 +137,7 @@ resource "aws_eks_node_group" "node_group" {
   cluster_name    = aws_eks_cluster.cluster.name
   node_group_name = "my-node-group"
   node_role_arn   = aws_iam_role.eks_node_group_role.arn
-  subnet_ids      = tolist(data.aws_subnet_ids.default.ids)
+  subnet_ids      = data.aws_subnet.default.ids
   scaling_config {
     desired_size = 1
     max_size     = 2
