@@ -2,6 +2,25 @@ resource "aws_iam_instance_profile" "ec2-profile" {
   name = "ec2-profile"
   role = "ec2-ecr-authorization"
 }
+
+resource "aws_instance" "servernode" {
+  ami                    = "ami-052efd3df9dad4825"
+  instance_type          = "t2.micro"
+  key_name               = aws_key_pair.deployer.key_name
+  vpc_security_group_ids = [aws_security_group.maingroup.id]
+  iam_instance_profile   = aws_iam_instance_profile.ec2-profile.name
+  connection {
+    type        = "ssh"
+    host        = self.public_ip
+    user        = "ubuntu"
+    private_key = var.private_key
+    timeout     = "4m"
+  }
+  tags = {
+    "name" = "EC2-instance"
+  }
+}
+
 resource "aws_security_group" "maingroup" {
   egress = [
     {
