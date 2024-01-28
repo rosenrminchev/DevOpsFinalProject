@@ -1,0 +1,8 @@
+# Ignore temporary and build-related files
+*.log
+*.tmp
+*.bak
+node_modules/
+dist/
+build/
+__pycache__/
