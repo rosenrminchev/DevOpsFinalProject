@@ -84,7 +84,7 @@ jobs:
             # Authenticate with AWS ECR
             aws ecr get-login-password --region eu-west-1 | sudo docker login --username AWS --password-stdin $REGISTRY
             
-            IMAGE_URI=$(aws ecr describe-images --repository-name example-node-app --query 'imageDetails | sort_by(@, &imagePushedAt) | [-1].imageTags[0]' --output text
+            IMAGE_URI=$(aws ecr describe-images --repository-name example-node-app --query 'imageDetails | sort_by(@, &imagePushedAt) | [-1].imageTags[0]' --output text)
             # Pull the Docker image from ECR using the correct image URI
             sudo docker pull $IMAGE_URI
             
