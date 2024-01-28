@@ -81,15 +81,22 @@ jobs:
           envs: PRIVATE_SSH_KEY,REGISTRY,REPOSITORY,IMAGE_TAG,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_DEFAULT_REGION,AWS_REGION
           script: |-
             sudo apt update
-            sudo apt install docker.io -y
-            sudo apt install awscli -y
-            sudo $(aws ecr get-login --no-include-email --region eu-west-1);
+            # Authenticate with AWS ECR
+            aws ecr get-login-password --region eu-west-1 | sudo docker login --username AWS --password-stdin $REGISTRY
+            
+            IMAGE_URI=$(aws ecr describe-images --repository-name example-node-app --query 'imageDetails | sort_by(@, &imagePushedAt) | [-1].imageTags[0]' --output text
+            # Pull the Docker image from ECR using the correct image URI
+            sudo docker pull $IMAGE_URI
+            
+            # Stop and remove the existing container if it's running
             sudo docker stop myappcontainer || true
             sudo docker rm myappcontainer || true
-            sudo docker pull $REGISTRY/$REPOSITORY:$IMAGE_TAG
-            sudo docker run -d --name myappcontainer -p 80:3000 $REGISTRY/$REPOSITORY:$IMAGE_TAG
-
-            IMAGE_URI=$(aws ecr describe-images --repository-name example-node-app --query 'imageDetails | sort_by(@, &imagePushedAt) | [-1].imageTags[0]' --output text)
+            
+            # Run the Docker container with the ECR image
+            sudo docker run -d --name myappcontainer -p 80:3000 $IMAGE_URI
+            
+            # Set the image reference in the GitHub environment
             echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
-          
+            
+            # Update the Kubernetes Deployment with the new image
             kubectl set image deployment/example-node-app example-node-app=$IMAGE_URI
