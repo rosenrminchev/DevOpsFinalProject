@@ -88,8 +88,8 @@ jobs:
             sudo docker rm myappcontainer || true
             sudo docker pull $REGISTRY/$REPOSITORY:$IMAGE_TAG
             sudo docker run -d --name myappcontainer -p 80:3000 $REGISTRY/$REPOSITORY:$IMAGE_TAG
-            
-            IMAGE_URI=$(aws ecr describe-images --repository-name example-node-app --query 'imageDetails[0].imageUri' --output text)
+
+            IMAGE_URI=$(aws ecr describe-images --repository-name example-node-app --query 'imageDetails | sort_by(@, &imagePushedAt) | [-1].imageTags[0]' --output text)
             echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
           
             kubectl set image deployment/example-node-app example-node-app=$IMAGE_URI
