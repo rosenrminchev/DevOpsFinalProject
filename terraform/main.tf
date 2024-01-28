@@ -148,6 +148,3 @@ resource "aws_eks_node_group" "node_group" {
     min_size     = 1
   }
 }
-
-# VPC, Subnets, Security Groups
-# (You would already have this in your configuration, just ensure they are correctly referenced)
