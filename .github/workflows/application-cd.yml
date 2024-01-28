@@ -14,6 +14,7 @@ env:
   PRIVATE_SSH_KEY: ${{ secrets.AWS_SSH_KEY }}
   PUBLIC_SSH_KEY: ${{ secrets.AWS_SSH_KEY_PUBLIC }}
   AWS_REGION: eu-west-1
+  SERVER_PUBLIC_IP: ${{ secrets.SERVER_PUBLIC_IP }}
 
 jobs:
   deploy-app:
@@ -53,10 +54,12 @@ jobs:
           AWS_DEFAULT_REGION: eu-west-1
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SERVER_PUBLIC_IP }}
+          host: ${{ env.SERVER_PUBLIC_IP }}
           username: ubuntu
-          key: ${{ secrets.PRIVATE_SSH_KEY }}
+          key: ${{ env.PRIVATE_SSH_KEY }}
           envs: PRIVATE_SSH_KEY,REGISTRY,REPOSITORY,IMAGE_TAG,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_DEFAULT_REGION,AWS_REGION,IMAGE_URI 
           script: |
+            sudo apt update -y
             sudo $(aws ecr get-login --no-include-email --region eu-west-1)
-            kubectl set image deployment/example-node-app example-node-app=${{ steps.login-ecr.outputs.registry }}/example-node-app:${{ github.sha }}
+            kubectl set image deployment/example-node-app example-node-app=$IMAGE_URI
+
