@@ -86,8 +86,8 @@ An EKS cluster is used for container orchestration. Ensure you have configured t
 9. Lens Installation
 Lens is a Kubernetes IDE that simplifies cluster management. Install Lens using the following command:
 
-# Example installation command, please refer to Lens documentation for the latest version.
-# This assumes you are using Linux, adjust for your OS.
+## Example installation command, please refer to Lens documentation for the latest version.
+This assumes you are using Linux, adjust for your OS.
 wget https://github.com/lensapp/lens/releases/download/v4.0.3/Lens-4.0.3.AppImage -O lens.AppImage
 chmod +x lens.AppImage
 ./lens.AppImage
@@ -95,10 +95,10 @@ chmod +x lens.AppImage
 10. Prometheus and Grafana Installation
 Prometheus and Grafana are monitoring and visualization tools. Deploy them to your Kubernetes cluster using Helm:
 
-# Install Helm if not already installed
-# Add Prometheus Helm repository
+## Install Helm if not already installed
+## Add Prometheus Helm repository
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 
-# Install Prometheus and Grafana
+## Install Prometheus and Grafana
 helm install prometheus-stack prometheus-community/kube-prometheus-stack
