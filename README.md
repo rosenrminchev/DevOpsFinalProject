@@ -17,10 +17,10 @@
 This repository contains a comprehensive setup for Continuous Integration and Continuous Deployment (CI/CD) using Terraform and AWS services. The goal is to automate the deployment process of a Node.js application on an AWS EC2 instance while managing infrastructure as code with Terraform. Additionally, it integrates with a Kubernetes cluster (EKS) for container orchestration.
 
 ## Tasks:
-1. Get AWS Credentials
+## 1. Get AWS Credentials
 Before you begin, ensure that you have access credentials from AWS. You'll need an Access Key ID and Secret Access Key to interact with AWS services programmatically.
 
-2. Develop a Simple Node.js App
+## 2. Develop a Simple Node.js App
 Create a basic Node.js application. The provided code is a minimal example that sets up a web server using Express.js.
 
 const express = require('express');
@@ -46,7 +46,7 @@ app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
 
-3. Write Dockerfile for the Application
+## 3. Write Dockerfile for the Application
 Create a Dockerfile to containerize your Node.js application. This file specifies how the application should be built and run within a Docker container.
 
 Dockerfile
@@ -59,16 +59,16 @@ COPY . .
 EXPOSE 3000
 CMD ["npm", "start"]
 
-4. Generate SSH Keys for EC2 Instance
+## 4. Generate SSH Keys for EC2 Instance
 Generate SSH keys that will be used to securely connect to your EC2 instance.
 
-5. Create an S3 Bucket for Terraform State
+## 5. Create an S3 Bucket for Terraform State
 Set up an S3 bucket to store the Terraform state files. This ensures consistent state management across your infrastructure.
 
-6. Write Terraform Scripts
+## 6. Write Terraform Scripts
 Create Terraform scripts for provisioning an EC2 instance, IAM roles, security groups, EKS cluster, and any other necessary AWS resources. The provided main.tf file is a starting point for your infrastructure.
 
-7. Write CI/CD Pipeline
+## 7. Write CI/CD Pipeline
 Configure a CI/CD pipeline using GitHub Actions to automate the deployment process. Below are the key steps within your GitHub Actions workflow:
 
 ## Deployment Workflow (Application Deployment)
@@ -80,10 +80,10 @@ Configure a CI/CD pipeline using GitHub Actions to automate the deployment proce
 - Triggered on pushes to the main branch.
 - Initializes Terraform, plans, applies infrastructure changes, and sets EC2 instance public IP as an output.
 
-8. Kubernetes (EKS) Integration
+## 8. Kubernetes (EKS) Integration
 An EKS cluster is used for container orchestration. Ensure you have configured the necessary AWS credentials for EKS.
 
-9. Lens Installation
+## 9. Lens Installation
 Lens is a Kubernetes IDE that simplifies cluster management. Install Lens using the following command:
 
 ## Example installation command, please refer to Lens documentation for the latest version.
@@ -92,13 +92,49 @@ This assumes you are using Linux, adjust for your OS.
 - chmod +x lens.AppImage
 - ./lens.AppImage
 
-10. Prometheus and Grafana Installation
+## 10. Prometheus and Grafana Installation
 Prometheus and Grafana are monitoring and visualization tools. Deploy them to your Kubernetes cluster using Helm:
 
-## Install Helm if not already installed
-## Add Prometheus Helm repository
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
+curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+sudo apt-get install apt-transport-https --yes
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install helm
 
-## Install Prometheus and Grafana
-helm install prometheus-stack prometheus-community/kube-prometheus-stack
+We need to add the Helm Stable Charts for your local client. Execute the below command:
+
+helm repo add stable https://charts.helm.sh/stable
+
+Add prometheus Helm repo
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-chart
+Prometheus and grafana helm chart moved to kube prometheus stack
+
+helm search repo prometheus-community
+
+Create Prometheus namespace
+
+kubectl create namespace prometheus
+
+Install kube-prometheus-stack
+Below is helm command to install kube-prometheus-stack. The helm repo kube-stack-prometheus (formerly prometheus-operator) comes with a grafana deployment embedded.
+
+helm install stable prometheus-community/kube-prometheus-stack -n prometheus
+
+Lets check if prometheus and grafana pods are running already
+
+kubectl get pods -n prometheus
+
+kubectl get svc -n prometheus
+
+This confirms that prometheus and grafana have been installed successfully using Helm.
+
+In order to make prometheus and grafana available outside the cluster, use LoadBalancer or NodePort instead of ClusterIP.
+
+Edit Prometheus Service
+kubectl edit svc stable-kube-prometheus-sta-prometheus -n prometheus
+
+Edit Grafana Service
+kubectl edit svc stable-grafana -n prometheus
+
+kubectl get svc -n prometheus
