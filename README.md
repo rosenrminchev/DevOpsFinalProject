@@ -1,163 +1,104 @@
-# Complete CI/CD with Terraform and AWS
-
+# Complete CI/CD with Terraform, AWS and Kubernetes
 
 ## Technologies:
 - Terraform
-- Github Actions
+- GitHub Actions
 - Docker
 - Node.js
 - AWS EC2
 - AWS S3
 - AWS ECR
+- Kubernetes (EKS)
+- Lens
+- Prometheus
+- Grafana
 
+## Overview:
+This repository contains a comprehensive setup for Continuous Integration and Continuous Deployment (CI/CD) using Terraform and AWS services. The goal is to automate the deployment process of a Node.js application on an AWS EC2 instance while managing infrastructure as code with Terraform. Additionally, it integrates with a Kubernetes cluster (EKS) for container orchestration.
 
 ## Tasks:
+1. Get AWS Credentials
+Before you begin, ensure that you have access credentials from AWS. You'll need an Access Key ID and Secret Access Key to interact with AWS services programmatically.
 
-- Get access id, secret id from AWS
-- Develop a simple nodejs app
-```js
-const express = require("express")
-const app = express()
+2. Develop a Simple Node.js App
+Create a basic Node.js application. The provided code is a minimal example that sets up a web server using Express.js.
 
-app.get("/",(req,res)=>{
-    res.send("Service is up and running")
-})
+const express = require('express');
+const app = express();
+const port = 3000;
 
-app.listen(8080,()=>{
-    console.log("Server is up")
-})
-```
+// Array of facts about Bulgaria
+const facts = [
+  "Bulgaria is the oldest country in Europe that hasn't changed its name since it was first established.",
+  "The Bulgarian army has never lost a single flag in battle.",
+  "Bulgaria is known for its natural diversity, with mountains, plains, seas, and rivers.",
+  "The Cyrillic alphabet, used in Bulgaria, was developed in the 9th century by two brothers, Saint Cyril and Saint Methodius.",
+  "Bulgaria has a rich tradition in folk music and dances.",
+  // Add more facts as needed
+];
 
-- Write Dockerfile for Simple Application
-```Dockerfile
+app.get('/', (req, res) => {
+  const randomFact = facts[Math.floor(Math.random() * facts.length)];
+  res.send(`<h1>Interesting Fact about Bulgaria</h1><p>${randomFact}</p>`);
+});
+
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
+});
+
+3. Write Dockerfile for the Application
+Create a Dockerfile to containerize your Node.js application. This file specifies how the application should be built and run within a Docker container.
+
+Dockerfile
+Copy code
 FROM node:14
 WORKDIR /user/app
 COPY package.json ./
 RUN npm install
 COPY . .
 EXPOSE 3000
-CMD ["npm","start"]
-```
+CMD ["npm", "start"]
 
-- Generate SSH keys for connecting to EC2 instance
-- Create a S3 bucket for storing Terraform State file
+4. Generate SSH Keys for EC2 Instance
+Generate SSH keys that will be used to securely connect to your EC2 instance.
 
-- Write Terraform Scripts for provisioning EC2 instance
+5. Create an S3 Bucket for Terraform State
+Set up an S3 bucket to store the Terraform state files. This ensures consistent state management across your infrastructure.
 
-## Write CI/CD pipeline
+6. Write Terraform Scripts
+Create Terraform scripts for provisioning an EC2 instance, IAM roles, security groups, EKS cluster, and any other necessary AWS resources. The provided main.tf file is a starting point for your infrastructure.
 
-- Write Github Actions workflow: Set environment variables
+7. Write CI/CD Pipeline
+Configure a CI/CD pipeline using GitHub Actions to automate the deployment process. Below are the key steps within your GitHub Actions workflow:
 
-```yml
-env:
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  TF_STATE_BUCKET_NAME: ${{ secrets.AWS_TF_STATE_BUCKET_NAME }}
-  PRIVATE_SSH_KEY: ${{ secrets.AWS_SSH_KEY_PRIVATE }}
-  PUBLIC_SSH_KEY: ${{ secrets.AWS_SSH_KEY_PUBLIC }}
-  AWS_REGION: eu-west-1
-```
-- Setup backend for S3 bucket with terraform init
+## Deployment Workflow (Application Deployment)
+- Triggered on pushes to the main branch.
+- Sets environment variables for AWS and SSH.
+- Builds and pushes the Docker image to AWS ECR.
+- SSHs into the EC2 instance and deploys the Docker container with the updated image.
+## CI/CD Workflow (CI/CD with Terraform)
+- Triggered on pushes to the main branch.
+- Initializes Terraform, plans, applies infrastructure changes, and sets EC2 instance public IP as an output.
 
-```yml
-    - name: checkout repo
-      uses: actions/checkout@v2
-    - name: setup terraform
-      uses: hashicorp/setup-terraform@v1
-      with:
-        terraform_wrapper: false
-    - name: Terraform Init
-      id: init
-      run: terraform init -backend-config="bucket=$TF_STATE_BUCKET_NAME" -backend-config="region=eu-west-1"
-      working-directory: ./terraform
-```
+8. Kubernetes (EKS) Integration
+An EKS cluster is used for container orchestration. Ensure you have configured the necessary AWS credentials for EKS.
 
-- Pass tf variables with Terraform plan
+9. Lens Installation
+Lens is a Kubernetes IDE that simplifies cluster management. Install Lens using the following command:
 
-```yml
-- name: Terraform Plan
-  id: plan
-  run: |-
-    terraform plan \
-    -var="region=us-east-1" \
-    -var="bucket=$TF_STATE_BUCKET_NAME" \
-    -var="public_key=$PUBLIC_SSH_KEY" \
-    -var="private_key=$PRIVATE_SSH_KEY" \
-    -var="key_name=deployer-key" \
-    -out=PLAN
-  working-directory: ./terraform
-```
+# Example installation command, please refer to Lens documentation for the latest version.
+# This assumes you are using Linux, adjust for your OS.
+wget https://github.com/lensapp/lens/releases/download/v4.0.3/Lens-4.0.3.AppImage -O lens.AppImage
+chmod +x lens.AppImage
+./lens.AppImage
 
-- Run terraform apply
+10. Prometheus and Grafana Installation
+Prometheus and Grafana are monitoring and visualization tools. Deploy them to your Kubernetes cluster using Helm:
 
-```yml
-- name: Terraform Apply
-    id: apply
-    run: |-
-      terraform apply PLAN
-    working-directory: ./terraform
-```
+# Install Helm if not already installed
+# Add Prometheus Helm repository
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
 
-- Set EC2 instance public ip as job output
-
-```yml
-- name: Set output
-    id: set-dns
-    run: |-
-        echo "::set-output name=instance_public_dns::$(terraform output instance_public_ip)"
-    working-directory: ./terraform
-```
-
-- Authenticate ECR
-```yml
-- name: Login to AWS ECR
-  id: login-ecr
-  uses: aws-actions/amazon-ecr-login@v1
-```
-
-- Set ec2 public ip as environment variable for later use
-
-```yml
-- run: echo SERVER_PUBLIC_IP=${{ needs.deploy-infra.outputs.SERVER_PUBLIC_DNS }} >> $GITHUB_ENV
-```
-
-- Build, tag and push docker image to Amazon ECR
-
-```yml
-- name: Build, tag, and push docker image to Amazon ECR
-    env:
-      REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-      REPOSITORY: example-node-app
-      IMAGE_TAG: ${{ github.sha }}
-    run: |
-      docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
-      docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
-    working-directory: ./nodeapp
-```
-
-- Connect to EC2 using ssh and deploy docker container
-
-```yml
-- name: Deploy Docker Image to EC2
-  env:
-    REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-    REPOSITORY: example-node-app
-    IMAGE_TAG: ${{ github.sha }}
-    AWS_DEFAULT_REGION: eu-west-1
-  uses: appleboy/ssh-action@master
-  with:
-    host: ${{ env.SERVER_PUBLIC_IP }}
-    username: ubuntu
-    key: ${{ env.PRIVATE_SSH_KEY }}
-    envs: PRIVATE_SSH_KEY,REGISTRY,REPOSITORY,IMAGE_TAG,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_REGION
-    script: |-
-      sudo apt update
-      sudo apt install docker.io -y
-      sudo apt install awscli -y
-      sudo $(aws ecr get-login --no-include-email --region eu-west-1);
-      sudo docker stop myappcontainer || true
-      sudo docker rm myappcontainer || true
-      sudo docker pull $REGISTRY/$REPOSITORY:$IMAGE_TAG
-      sudo docker run -d --name myappcontainer -p 80:3000 $REGISTRY/$REPOSITORY:$IMAGE_TAG
-```
-
+# Install Prometheus and Grafana
+helm install prometheus-stack prometheus-community/kube-prometheus-stack
