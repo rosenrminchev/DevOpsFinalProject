@@ -73,6 +73,7 @@ jobs:
           REPOSITORY: example-node-app
           IMAGE_TAG: ${{ github.sha }}
           AWS_DEFAULT_REGION: eu-west-1
+          IMAGE_URI: ${{ steps.login-ecr.outputs.registry }}/example-node-app:${{ github.sha }}
         uses: appleboy/ssh-action@master
         with:
           host: ${{ env.SERVER_PUBLIC_IP }}
@@ -86,13 +87,4 @@ jobs:
             sudo docker rm myappcontainer || true
             sudo docker pull $REGISTRY/$REPOSITORY:$IMAGE_TAG
             sudo docker run -d --name myappcontainer -p 80:3000 $REGISTRY/$REPOSITORY:$IMAGE_TAGI
-      - name: Update Kubernetes Deployment with New Image
-        env:
-          IMAGE_URI: ${{ steps.login-ecr.outputs.registry }}/example-node-app:${{ github.sha }}
-        run: |
-          # Set up kubectl and authenticate with your Kubernetes cluster
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ./kubeconfig
-          export KUBECONFIG=./kubeconfig
-
-          # Update the Kubernetes Deployment with the new image URI
-          kubectl set image deployment/example-node-app example-node-app=$IMAGE_URI
+            kubectl set image deployment/example-node-app example-node-app=$IMAGE_URI
